@@ -3,7 +3,6 @@ import requests
 import pandas as pd
 import sqlite3
 
-conn = sqlite3.connect("wnjpn.db")
 app = Flask(__name__)
 error_message = ""
 
@@ -16,8 +15,8 @@ def index():
 
 @app.route("/", methods=["POST"])
 def submit():
+    conn = sqlite3.connect("wnjpn.db")
     APIkeys =  pd.read_csv("api_keys.csv", header=None).values.tolist()
-    hiraganaAPIep = "https://labs.goo.ne.jp/api/hiragana"
     input_text = request.form["input_text"]
     if input_text == "":
         global error_message
@@ -25,35 +24,49 @@ def submit():
         return render_template("index.html", error_message=error_message)
 
     # ひらがな変換API
+    hiraganaAPIep = "https://labs.goo.ne.jp/api/hiragana"
     data = {
         "app_id": APIkeys[0],
         "request_id": "request",
         "sentence": input_text,
         "output_type": "hiragana",
     }
-    res = requests.post(hiraganaAPIep, data=data)
-    output_text = res.json()["converted"]
-    output_text = output_text.replace(" ", "")
-    # サブストリングを1-2文字のもの以外全て抽出
+    hiragana_res = requests.post(hiraganaAPIep, data=data)
+    hiragana_text = hiragana_res.json()["converted"]
+    hiragana_text = hiragana_text.replace(" ", "")
+    # サブストリングを1文字のもの以外全て抽出
     subStrings = []
-    for i in range(len(output_text)):
-        for j in range(i + 3, len(output_text) + 1):
-            subStrings.append(output_text[i:j])
+    for i in range(len(hiragana_text)):
+        for j in range(i + 3, len(hiragana_text) + 1):
+            subStrings.append(hiragana_text[i:j])
     subStrings = list(set(subStrings))
     subStrings.sort(key=len, reverse=True)
 
-    # Wordnetに存在する語であるかの判定
-    cur = conn.execute("select wordid from word where lemma='%s'" % output_text)
-    word_id = -1
-    for row in cur:
-        word_id = row[0]
-    if word_id == -1:
-        print("「%s」は、Wordnetに存在しない単語です。" % output_text)
+    #変換API
+    transliterateAPIep = "http://www.google.com/transliterate"
+
+    # Wordnetで存在する語であるかの判定
+    result = []
+    for i in range(len(subStrings)):
+        subStrings[i] = requests.get(transliterateAPIep, params={"langpair": "ja-Hira|ja", "text": subStrings[i]})
+        subStrings[i] = subStrings[i].text.split("\t")[0]
+        subStrings[i] = subStrings[i].split(",")[1].split("\"")[1]
+        cur = conn.execute("select wordid from word where lemma='%s'" % subStrings[i])
+        word_id = -1
+        for row in cur:
+            word_id = row[0]
+        if word_id != -1:
+            result.append(subStrings[i])
+    conn.close()
+    # 重複を削除
+    result = list(set(result))
+    result.sort(key=len, reverse=True)
     return render_template(
         "result.html",
         input_text=input_text,
-        output_text=output_text,
+        output_text=hiragana_text,
         subStrings=subStrings,
+        result=result
     )
 
 
