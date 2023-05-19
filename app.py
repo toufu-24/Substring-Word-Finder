@@ -2,6 +2,7 @@ from flask import Flask, request, render_template
 import requests
 import pandas as pd
 import sqlite3
+from tqdm import tqdm
 
 app = Flask(__name__)
 error_message = ""
@@ -35,6 +36,11 @@ def submit():
     for i in range(len(morpheme_res)):
         for j in range(len(morpheme_res[i])):
             morpheme_set.add(morpheme_res[i][j][0])
+    #形態素の配列
+    morpheme_list = []
+    for i in range(len(morpheme_res)):
+        for j in range(len(morpheme_res[i])):
+            morpheme_list.append(morpheme_res[i][j][0])
 
     # ひらがな変換API
     hiraganaAPIep = "https://labs.goo.ne.jp/api/hiragana"
@@ -62,7 +68,7 @@ def submit():
     # Wordnetで存在する語であるかの判定
     conn = sqlite3.connect("wnjpn.db")
     result = []
-    for i in range(len(subStrings)):
+    for i in tqdm(range(len(subStrings))):
         subStrings[i] = requests.get(
             transliterateAPIep, params={"langpair": "ja-Hira|ja", "text": subStrings[i]}
         )
@@ -87,6 +93,7 @@ def submit():
         "result.html",
         input_text=input_text,
         output_text=hiragana_text,
+        morpheme_list=morpheme_list,
         row_subStrings=row_subStrings,
         subStrings=subStrings,
         result=result,
