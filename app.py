@@ -1,7 +1,6 @@
 from flask import Flask, request, render_template
 import requests
 import pandas as pd
-import sqlite3
 from tqdm import tqdm
 
 app = Flask(__name__)
@@ -36,7 +35,7 @@ def submit():
     for i in range(len(morpheme_res)):
         for j in range(len(morpheme_res[i])):
             morpheme_set.add(morpheme_res[i][j][0])
-    #形態素の配列
+    # 形態素の配列
     morpheme_list = []
     for i in range(len(morpheme_res)):
         for j in range(len(morpheme_res[i])):
@@ -53,38 +52,44 @@ def submit():
     hiragana_res = requests.post(hiraganaAPIep, data=data)
     hiragana_text = hiragana_res.json()["converted"]
     hiragana_text = hiragana_text.replace(" ", "")
-    # サブストリングを1文字のもの以外全て抽出
+    # 連続部分文字列を1文字のもの以外全て抽出
     subStrings = []
     for i in range(len(hiragana_text)):
         for j in range(i + 2, len(hiragana_text) + 1):
             subStrings.append(hiragana_text[i:j])
     subStrings = list(set(subStrings))
     subStrings.sort(key=len, reverse=True)
+    subStrings.pop(0)
     row_subStrings = subStrings.copy()
 
     # 変換API
     transliterateAPIep = "http://www.google.com/transliterate"
-
-    # Wordnetで存在する語であるかの判定
-    conn = sqlite3.connect("wnjpn.db")
-    result = []
     for i in tqdm(range(len(subStrings))):
         subStrings[i] = requests.get(
             transliterateAPIep, params={"langpair": "ja-Hira|ja", "text": subStrings[i]}
         )
         subStrings[i] = subStrings[i].text.split("\t")[0]
         subStrings[i] = subStrings[i].split(",")[1].split('"')[1]
-        cur = conn.execute("select wordid from word where lemma='%s'" % subStrings[i])
-        word_id = -1
-        for row in cur:
-            word_id = row[0]
-        if word_id != -1:
-            result.append(subStrings[i])
-    conn.close()
+
+    # Wikipediaに存在する語であるかの判定
+    exist_wikipedia = []
+    strings = ""
+    for i in range(len(subStrings) - 1):
+        strings += subStrings[i] + "|"
+    strings += subStrings[len(subStrings) - 1]
+    base_url = "https://ja.wikipedia.org/w/api.php"
+    params = {"action": "query", "format": "json", "prop": "info", "titles": strings}
+    WikiResponse = requests.get(base_url, params=params)
+    data = WikiResponse.json()
+    pages = data["query"]["pages"]
+    for page in pages.values():
+        if page.get("missing") is None:
+            exist_wikipedia.append(page["title"])
+
     # 重複を削除
-    result = list(set(result))
+    result = list(set(exist_wikipedia))
     result.sort(key=len, reverse=True)
-    #形態素解析で抽出した語を削除
+    # 形態素解析で抽出した語を削除
     for i in range(len(result)):
         if result[i] in morpheme_set:
             result[i] = ""
