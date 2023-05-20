@@ -111,6 +111,9 @@ def submit():
         segment = parsed_data["result"]["segment"]
         for s in segment:
             transliterated_subStrings.extend(s["candidate"])
+    # 重複を削除
+    transliterated_subStrings = list(set(transliterated_subStrings))
+    transliterated_subStrings.sort(key=len, reverse=True)
 
     # Wikipediaに存在する語であるかの判定
     exist_wikipedia = []
