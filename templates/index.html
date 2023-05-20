@@ -6,18 +6,34 @@
 </head>
 
 <body>
+    <h1>「○○の△△の部分」の○○を入力すると△△を出力します</h1>
     <form method="POST">
         <label for="input_text">Input Text:</label>
-        <input type="text" id="input_text" name="input_text">
+        <input type="text" id="input_text" name="input_text" style="width: 300px; height: 50px; font-size: 20px;">
         <button type="submit">Submit</button>
-        <p> {{ error_message }}</p>
     </form>
+    <p style="color: brown;"> {{ error_message }}</p>
+    <p>Input: {{input_text}}</p>
+    <p>result: {{ result }}</p>
 
+    <details>
+        <summary style="cursor: pointer;">詳細 </summary>
+        <p style="color: brown;">もし読みが誤っている場合はひらがなで入力して下さい</p>
+        <p>読み: {{ output_text }}</p>
+        <p>形態素: {{ morpheme_list }}</p>
+        <p>result候補: {{ subStrings }} </p>
+    </details>
 </body>
 
+<!-- Begin Yahoo! JAPAN Web Services Attribution Snippet -->
+<span style="margin:15px 15px 15px 15px"><a href="https://developer.yahoo.co.jp/sitemap/"
+        style="position: fixed; bottom: 15px; left: 15px;">Webサービス by Yahoo! JAPAN</a></span>
+<!-- End Yahoo! JAPAN Web Services Attribution Snippet -->
 <a href="http://www.goo.ne.jp/">
-    <img src="//u.xgoo.jp/img/sgoo.png" alt="supported by goo" title="supported by goo" style="bottom: 0;">
+    <img src="//u.xgoo.jp/img/sgoo.png" alt="supported by goo" title="supported by goo"
+        style="position: fixed; bottom: 0; right: 0;">
 </a>
+
 <br />
 
 </html>

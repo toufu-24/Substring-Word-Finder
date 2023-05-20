@@ -2,32 +2,34 @@ from flask import Flask, request, render_template
 import requests
 import pandas as pd
 from tqdm import tqdm
+import json
+from urllib import request as req
 
+LIMITHIRAGANA = 15
 app = Flask(__name__)
-error_message = ""
+message = ""
 
 
 @app.route("/")
 def index():
-    global error_message
-    error_message = ""
-    return render_template("index.html", error_message=error_message)
+    global message
+    message = ""
+    return render_template("index.html", error_message=message)
 
 
 @app.route("/", methods=["POST"])
 def submit():
+    global message
     APIkeys = pd.read_csv("api_keys.csv", header=None).values.tolist()
     input_text = request.form["input_text"]
     if input_text == "":
-        global error_message
-        error_message = "テキストを入力してから送信してください"
-        return render_template("index.html", error_message=error_message)
-
+        message = "テキストを入力してから送信してください"
+        return render_template("index.html", error_message=message)
     # 形態素のsetを作成
     morpheme_set = set()
     morphemeAPIep = "https://labs.goo.ne.jp/api/morph"
     data = {
-        "app_id": APIkeys[0],
+        "app_id": APIkeys[0][0],
         "sentence": input_text,
     }
     morpheme_res = requests.post(morphemeAPIep, data=data)
@@ -52,6 +54,14 @@ def submit():
     hiragana_res = requests.post(hiraganaAPIep, data=data)
     hiragana_text = hiragana_res.json()["converted"]
     hiragana_text = hiragana_text.replace(" ", "")
+
+    if len(hiragana_text) >= LIMITHIRAGANA:
+        message = "ひらがなで" + LIMITHIRAGANA + "文字以下してください"
+        return render_template("index.html", error_message=message)
+    elif len(hiragana_text) <= 2:
+        message = "ひらがなで3文字以上にしてください"
+        return render_template("index.html", error_message=message)
+
     # 連続部分文字列を1文字のもの以外全て抽出
     subStrings = []
     for i in range(len(hiragana_text)):
@@ -62,23 +72,60 @@ def submit():
     subStrings.pop(0)
     row_subStrings = subStrings.copy()
 
-    # 変換API
-    transliterateAPIep = "http://www.google.com/transliterate"
-    for i in tqdm(range(len(subStrings))):
-        subStrings[i] = requests.get(
-            transliterateAPIep, params={"langpair": "ja-Hira|ja", "text": subStrings[i]}
-        )
-        subStrings[i] = subStrings[i].text.split("\t")[0]
-        subStrings[i] = subStrings[i].split(",")[1].split('"')[1]
+    # 日本語変換API
+    def post(query):
+        Apikeys = pd.read_csv("api_keys.csv", header=None).values.tolist()
+        APPID = Apikeys[1][0]
+        URL = "https://jlp.yahooapis.jp/JIMService/V2/conversion"
+        headers = {
+            "Content-Type": "application/json",
+            "User-Agent": "Yahoo AppID: {}".format(APPID),
+        }
+        param_dic = {
+            "id": "1234-1",
+            "jsonrpc": "2.0",
+            "method": "jlp.jimservice.conversion",
+            "params": {"q": query, "results": 1},
+        }
+        params = json.dumps(param_dic).encode()
+        requ = req.Request(URL, params, headers)
+        with req.urlopen(requ) as res:
+            body = res.read()
+        return body.decode()
+
+    length_watcher = True
+    transliterated_subStrings = []
+    i = 0
+    while length_watcher:
+        string = ""
+        for j in range(i, len(subStrings)):
+            if len(string + subStrings[j]) >= 70:
+                j -= 1
+                break
+            string += subStrings[j] + " "
+        if j == len(subStrings) - 1:
+            length_watcher = False
+        i = j + 1
+        post_res = post(string)
+        parsed_data = json.loads(post_res)
+        segment = parsed_data["result"]["segment"]
+        for s in segment:
+            transliterated_subStrings.extend(s["candidate"])
 
     # Wikipediaに存在する語であるかの判定
     exist_wikipedia = []
-    strings = ""
-    for i in range(len(subStrings) - 1):
-        strings += subStrings[i] + "|"
-    strings += subStrings[len(subStrings) - 1]
+    wikipedia_input_str = ""
+    for i in range(len(transliterated_subStrings) - 1):
+        wikipedia_input_str += transliterated_subStrings[i] + "|"
+    wikipedia_input_str += transliterated_subStrings[len(transliterated_subStrings) - 1]
+
     base_url = "https://ja.wikipedia.org/w/api.php"
-    params = {"action": "query", "format": "json", "prop": "info", "titles": strings}
+    params = {
+        "action": "query",
+        "format": "json",
+        "prop": "info",
+        "titles": wikipedia_input_str,
+    }
     WikiResponse = requests.get(base_url, params=params)
     data = WikiResponse.json()
     pages = data["query"]["pages"]
@@ -95,12 +142,12 @@ def submit():
             result[i] = ""
     result = [x for x in result if x != ""]
     return render_template(
-        "result.html",
+        "index.html",
         input_text=input_text,
         output_text=hiragana_text,
         morpheme_list=morpheme_list,
         row_subStrings=row_subStrings,
-        subStrings=subStrings,
+        subStrings=transliterated_subStrings,
         result=result,
     )
 
