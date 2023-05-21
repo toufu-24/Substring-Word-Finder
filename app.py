@@ -1,9 +1,8 @@
 from flask import Flask, request, render_template
 import requests
-import pandas as pd
-from tqdm import tqdm
 import json
 from urllib import request as req
+import csv
 
 LIMITHIRAGANA = 15
 app = Flask(__name__)
@@ -20,7 +19,10 @@ def index():
 @app.route("/", methods=["POST"])
 def submit():
     global message
-    APIkeys = pd.read_csv("api_keys.csv", header=None).values.tolist()
+    # APIキーの読み込み
+    with open("api_keys.csv", "r") as f:
+        reader = csv.reader(f)
+        APIkeys = [row for row in reader]
     input_text = request.form["input_text"]
     if input_text == "":
         message = "テキストを入力してから送信してください"
@@ -74,8 +76,7 @@ def submit():
 
     # 日本語変換API
     def post(query):
-        Apikeys = pd.read_csv("api_keys.csv", header=None).values.tolist()
-        APPID = Apikeys[1][0]
+        APPID = APIkeys[1][0]
         URL = "https://jlp.yahooapis.jp/JIMService/V2/conversion"
         headers = {
             "Content-Type": "application/json",
@@ -122,6 +123,7 @@ def submit():
         wikipedia_input_str += transliterated_subStrings[i] + "|"
     wikipedia_input_str += transliterated_subStrings[len(transliterated_subStrings) - 1]
 
+    headers = {"Accept-Encoding": "gzip", "User-Agent": "word-finder(https://toufu.pythonanywhere.com)"}
     base_url = "https://ja.wikipedia.org/w/api.php"
     params = {
         "action": "query",
@@ -129,7 +131,7 @@ def submit():
         "prop": "info",
         "titles": wikipedia_input_str,
     }
-    WikiResponse = requests.get(base_url, params=params)
+    WikiResponse = requests.get(base_url, headers=headers, params=params)
     data = WikiResponse.json()
     pages = data["query"]["pages"]
     for page in pages.values():
