@@ -8,6 +8,94 @@ LIMITHIRAGANA = 15
 app = Flask(__name__)
 message = ""
 
+katakana_to_hiragana_table = {
+    "ア": "あ",
+    "イ": "い",
+    "ウ": "う",
+    "エ": "え",
+    "オ": "お",
+    "カ": "か",
+    "キ": "き",
+    "ク": "く",
+    "ケ": "け",
+    "コ": "こ",
+    "サ": "さ",
+    "シ": "し",
+    "ス": "す",
+    "セ": "せ",
+    "ソ": "そ",
+    "タ": "た",
+    "チ": "ち",
+    "ツ": "つ",
+    "テ": "て",
+    "ト": "と",
+    "ナ": "な",
+    "ニ": "に",
+    "ヌ": "ぬ",
+    "ネ": "ね",
+    "ノ": "の",
+    "ハ": "は",
+    "ヒ": "ひ",
+    "フ": "ふ",
+    "ヘ": "へ",
+    "ホ": "ほ",
+    "マ": "ま",
+    "ミ": "み",
+    "ム": "む",
+    "メ": "め",
+    "モ": "も",
+    "ヤ": "や",
+    "ユ": "ゆ",
+    "ヨ": "よ",
+    "ラ": "ら",
+    "リ": "り",
+    "ル": "る",
+    "レ": "れ",
+    "ロ": "ろ",
+    "ワ": "わ",
+    "ヲ": "を",
+    "ン": "ん",
+    "ガ": "が",
+    "ギ": "ぎ",
+    "グ": "ぐ",
+    "ゲ": "げ",
+    "ゴ": "ご",
+    "ザ": "ざ",
+    "ジ": "じ",
+    "ズ": "ず",
+    "ゼ": "ぜ",
+    "ゾ": "ぞ",
+    "ダ": "だ",
+    "ヂ": "ぢ",
+    "ヅ": "づ",
+    "デ": "で",
+    "ド": "ど",
+    "バ": "ば",
+    "ビ": "び",
+    "ブ": "ぶ",
+    "ベ": "べ",
+    "ボ": "ぼ",
+    "パ": "ぱ",
+    "ピ": "ぴ",
+    "プ": "ぷ",
+    "ペ": "ぺ",
+    "ポ": "ぽ",
+    "ヴ": "ゔ",
+    "ヷ": "わ",
+    "ヸ": "ゐ",
+    "ヹ": "ゑ",
+    "ヺ": "を",
+    "ァ": "ぁ",
+    "ィ": "ぃ",
+    "ゥ": "ぅ",
+    "ェ": "ぇ",
+    "ォ": "ぉ",
+    "ャ": "ゃ",
+    "ュ": "ゅ",
+    "ョ": "ょ",
+    "ッ": "っ",
+}
+
 
 @app.route("/")
 def index():
@@ -29,34 +117,74 @@ def submit():
         return render_template("index.html", error_message=message)
     # 形態素のsetを作成
     morpheme_set = set()
-    morphemeAPIep = "https://labs.goo.ne.jp/api/morph"
-    data = {
-        "app_id": APIkeys[0][0],
-        "sentence": input_text,
-    }
-    morpheme_res = requests.post(morphemeAPIep, data=data)
-    morpheme_res = morpheme_res.json()["word_list"]
-    for i in range(len(morpheme_res)):
-        for j in range(len(morpheme_res[i])):
-            morpheme_set.add(morpheme_res[i][j][0])
+    YahooAPIkey = APIkeys[0][0]
+
+    def parse_post(query):
+        morphemeAPIep = "https://jlp.yahooapis.jp/MAService/V2/parse"
+        headers = {
+            "Content-Type": "application/json",
+            "User-Agent": "Yahoo AppID: {}".format(YahooAPIkey),
+        }
+        param_dic = {
+            "id": "toufu",
+            "jsonrpc": "2.0",
+            "method": "jlp.maservice.parse",
+            "params": {"q": query},
+        }
+        params = json.dumps(param_dic).encode()
+        requ = req.Request(morphemeAPIep, params, headers)
+        with req.urlopen(requ) as res:
+            body = res.read()
+        return body.decode()
+
+    morpheme_res = parse_post(input_text)
     # 形態素の配列
-    morpheme_list = []
-    for i in range(len(morpheme_res)):
-        for j in range(len(morpheme_res[i])):
-            morpheme_list.append(morpheme_res[i][j][0])
+    morpheme_res = json.loads(morpheme_res)["result"]["tokens"]
+    morpheme_list = [morpheme[0] for morpheme in morpheme_res]
+    for i in range(len(morpheme_list)):
+        morpheme_set.add(morpheme_list[i])
 
     # ひらがな変換API
-    hiraganaAPIep = "https://labs.goo.ne.jp/api/hiragana"
-    data = {
-        "app_id": APIkeys[0],
-        "request_id": "hiragana",
-        "sentence": input_text,
-        "output_type": "hiragana",
-    }
-    hiragana_res = requests.post(hiraganaAPIep, data=data)
-    hiragana_text = hiragana_res.json()["converted"]
-    hiragana_text = hiragana_text.replace(" ", "")
+    def post(query):
+        hiraganaAPIep = "https://jlp.yahooapis.jp/FuriganaService/V2/furigana"
+        headers = {
+            "Content-Type": "application/json",
+            "User-Agent": "Yahoo AppID: {}".format(YahooAPIkey),
+        }
+        param_dic = {
+            "id": "1234-1",
+            "jsonrpc": "2.0",
+            "method": "jlp.furiganaservice.furigana",
+            "params": {"q": query, "grade": 1},
+        }
+        params = json.dumps(param_dic).encode()
+        requ = req.Request(hiraganaAPIep, params, headers)
+        with req.urlopen(requ) as res:
+            body = res.read()
+        return body.decode()
 
+    response = post(input_text)
+    parsed_data = json.loads(response)
+    word = parsed_data["result"]["word"]
+    hiragana_text = ""
+    for w in word:
+        if "furigana" in w:
+            hiragana_text += w["furigana"]
+        else:
+            hiragana_text += w["surface"]
+
+    def katakana_to_hiragana(katakana_text):
+        hiragana_text = ""
+        for char in katakana_text:
+            if char in katakana_to_hiragana_table:
+                hiragana_text += katakana_to_hiragana_table[char]
+            else:
+                hiragana_text += char
+        return hiragana_text
+
+    hiragana_text = katakana_to_hiragana(hiragana_text)
+
+    print(hiragana_text)
     if len(hiragana_text) >= LIMITHIRAGANA:
         message = "ひらがなで" + LIMITHIRAGANA + "文字以下してください"
         return render_template("index.html", error_message=message)
@@ -75,7 +203,7 @@ def submit():
     row_subStrings = subStrings.copy()
 
     # 日本語変換API
-    def post(query):
+    def conversion_post(query):
         APPID = APIkeys[1][0]
         URL = "https://jlp.yahooapis.jp/JIMService/V2/conversion"
         headers = {
@@ -83,7 +211,7 @@ def submit():
             "User-Agent": "Yahoo AppID: {}".format(APPID),
         }
         param_dic = {
-            "id": "1234-1",
+            "id": "toufu",
             "jsonrpc": "2.0",
             "method": "jlp.jimservice.conversion",
             "params": {"q": query, "results": 1},
@@ -107,7 +235,7 @@ def submit():
         if j == len(subStrings) - 1:
             length_watcher = False
         i = j + 1
-        post_res = post(string)
+        post_res = conversion_post(string)
         parsed_data = json.loads(post_res)
         segment = parsed_data["result"]["segment"]
         for s in segment:
@@ -123,7 +251,10 @@ def submit():
         wikipedia_input_str += transliterated_subStrings[i] + "|"
     wikipedia_input_str += transliterated_subStrings[len(transliterated_subStrings) - 1]
 
-    headers = {"Accept-Encoding": "gzip", "User-Agent": "word-finder(https://toufu.pythonanywhere.com)"}
+    headers = {
+        "Accept-Encoding": "gzip",
+        "User-Agent": "word-finder(https://toufu.pythonanywhere.com)",
+    }
     base_url = "https://ja.wikipedia.org/w/api.php"
     params = {
         "action": "query",
