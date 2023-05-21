@@ -117,7 +117,7 @@ def submit():
         return render_template("index.html", error_message=message)
     # 形態素のsetを作成
     morpheme_set = set()
-    YahooAPIkey = APIkeys[0][0]
+    YahooAPIkey = APIkeys[1][0]
 
     def parse_post(query):
         morphemeAPIep = "https://jlp.yahooapis.jp/MAService/V2/parse"
@@ -184,7 +184,6 @@ def submit():
 
     hiragana_text = katakana_to_hiragana(hiragana_text)
 
-    print(hiragana_text)
     if len(hiragana_text) >= LIMITHIRAGANA:
         message = "ひらがなで" + LIMITHIRAGANA + "文字以下してください"
         return render_template("index.html", error_message=message)
