@@ -41,18 +41,17 @@ def index():
 def submit():
     global message
     input_text = request.form["input_text"]
-
-    LIMITHIRAGANA = "15"
+    
+    LIMITHIRAGANA = 15
     if input_text == "":
         message = "テキストを入力してから送信してください"
         return render_template("index.html", error_message=message)
     elif len(input_text) >= LIMITHIRAGANA:
-        message = LIMITHIRAGANA + "文字以下してください"
+        message = str(LIMITHIRAGANA) + "文字以下にしてください"
         return render_template("index.html", error_message=message)
-    APIkeys = os.getenv("YahooAPIkey")
+    YahooAPIkey = os.getenv("YahooAPIkey")
     # 形態素のsetを作成
     morpheme_set = set()
-    YahooAPIkey = APIkeys
 
     def parse_post(query):
         morphemeAPIep = "https://jlp.yahooapis.jp/MAService/V2/parse"
@@ -120,7 +119,7 @@ def submit():
     hiragana_text = katakana_to_hiragana(hiragana_text)
 
     if len(hiragana_text) >= LIMITHIRAGANA:
-        message = "ひらがなで" + LIMITHIRAGANA + "文字以下してください"
+        message = "ひらがなで" + str(LIMITHIRAGANA) + "文字以下にしてください"
         return render_template("index.html", error_message=message)
     elif len(hiragana_text) <= 2:
         message = "ひらがなで3文字以上にしてください"
@@ -138,7 +137,7 @@ def submit():
 
     # 日本語変換API
     def conversion_post(query):
-        APPID = APIkeys
+        APPID = YahooAPIkey
         URL = "https://jlp.yahooapis.jp/JIMService/V2/conversion"
         headers = {
             "Content-Type": "application/json",
