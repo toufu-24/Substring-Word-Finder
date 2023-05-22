@@ -42,7 +42,7 @@ def submit():
     global message
     input_text = request.form["input_text"]
 
-    LIMITHIRAGANA = 15
+    LIMITHIRAGANA = "15"
     if input_text == "":
         message = "テキストを入力してから送信してください"
         return render_template("index.html", error_message=message)
