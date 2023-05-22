@@ -45,6 +45,9 @@ def submit():
     if input_text == "":
         message = "テキストを入力してから送信してください"
         return render_template("index.html", error_message=message)
+    elif len(input_text) >= LIMITHIRAGANA:
+        message = LIMITHIRAGANA + "文字以下してください"
+        return render_template("index.html", error_message=message)
     APIkeys = os.getenv("YahooAPIkey")
     # 形態素のsetを作成
     morpheme_set = set()
