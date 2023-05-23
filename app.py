@@ -86,7 +86,7 @@ def submit():
             "User-Agent": "Yahoo AppID: {}".format(YahooAPIkey),
         }
         param_dic = {
-            "id": "1234-1",
+            "id": "toufu",
             "jsonrpc": "2.0",
             "method": "jlp.furiganaservice.furigana",
             "params": {"q": query, "grade": 1},
@@ -186,7 +186,7 @@ def submit():
 
     headers = {
         "Accept-Encoding": "gzip",
-        "User-Agent": "word-finder(https://toufu.pythonanywhere.com)",
+        "User-Agent": "word-finder(https://substring-word-finder.onrender.com/)",
     }
     base_url = "https://ja.wikipedia.org/w/api.php"
     params = {
