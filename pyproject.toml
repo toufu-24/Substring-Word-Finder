@@ -1,0 +1,29 @@
+[project]
+name = "substring-word-finder"
+version = "0.1.0"
+description = "Add your description here"
+authors = [
+    { name = "toufu-24", email = "120612884+toufu-24@users.noreply.github.com" }
+]
+dependencies = [
+    "streamlit>=1.38.0",
+]
+readme = "README.md"
+requires-python = ">= 3.8"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.rye]
+managed = true
+dev-dependencies = []
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/substring_word_finder"]
+
+[tool.rye.scripts]
+hoge = "streamlit run src/substring_word_finder/main.py"
