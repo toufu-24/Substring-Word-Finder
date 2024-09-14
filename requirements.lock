@@ -31,6 +31,8 @@ gitpython==3.1.43
     # via streamlit
 idna==3.9
     # via requests
+importlib-metadata==6.11.0
+    # via streamlit
 jinja2==3.1.4
     # via altair
     # via pydeck
@@ -46,19 +48,19 @@ mdurl==0.1.2
     # via markdown-it-py
 narwhals==1.8.0
     # via altair
-numpy==2.1.1
+numpy==1.26.4
     # via pandas
     # via pyarrow
     # via pydeck
     # via streamlit
-packaging==24.1
+packaging==23.2
     # via altair
     # via streamlit
 pandas==2.2.2
     # via streamlit
-pillow==10.4.0
+pillow==9.5.0
     # via streamlit
-protobuf==5.28.1
+protobuf==4.25.4
     # via streamlit
 pyarrow==17.0.0
     # via streamlit
@@ -66,10 +68,15 @@ pydeck==0.9.1
     # via streamlit
 pygments==2.18.0
     # via rich
+pympler==1.1
+    # via streamlit
 python-dateutil==2.9.0.post0
     # via pandas
+    # via streamlit
 pytz==2024.2
     # via pandas
+pytz-deprecation-shim==0.1.0.post0
+    # via tzlocal
 referencing==0.35.1
     # via jsonschema
     # via jsonschema-specifications
@@ -84,7 +91,7 @@ six==1.16.0
     # via python-dateutil
 smmap==5.0.1
     # via gitdb
-streamlit==1.38.0
+streamlit==1.23.1
     # via substring-word-finder
 tenacity==8.5.0
     # via streamlit
@@ -97,7 +104,14 @@ typing-extensions==4.12.2
     # via streamlit
 tzdata==2024.1
     # via pandas
+    # via pytz-deprecation-shim
+tzlocal==4.3.1
+    # via streamlit
 urllib3==2.2.3
     # via requests
+validators==0.34.0
+    # via streamlit
 watchdog==4.0.2
     # via streamlit
+zipp==3.20.2
+    # via importlib-metadata

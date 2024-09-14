@@ -6,10 +6,10 @@ authors = [
     { name = "toufu-24", email = "120612884+toufu-24@users.noreply.github.com" }
 ]
 dependencies = [
-    "streamlit>=1.38.0",
+    "streamlit==1.23.1",
 ]
 readme = "README.md"
-requires-python = ">= 3.8"
+requires-python = ">= 3.7"
 
 [build-system]
 requires = ["hatchling"]
