@@ -136,6 +136,15 @@ def main():
         '<a href="https://github.com/toufu-24/Substring-Word-Finder" target="_blank">GitHubリポジトリ</a>',
         unsafe_allow_html=True,
     )
+    st.markdown(
+        """
+    <div style='text-align: right; margin-top: 50px;'>
+        <span style='margin:15px;'><a href="https://developer.yahoo.co.jp/sitemap/">Webサービス by Yahoo! JAPAN</a></span><br>
+        <a href="https://www.mediawiki.org/wiki/API:Main_page/ja">Powered by MediaWiki</a>
+    </div>
+    """,
+        unsafe_allow_html=True,
+    )
 
     input_text = st.text_input("テキストを入力してください")
     if not input_text:
