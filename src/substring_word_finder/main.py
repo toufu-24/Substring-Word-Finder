@@ -1,10 +1,10 @@
 import streamlit as st
 import requests
-import json
-from urllib import request as req
 import os
+from dotenv import load_dotenv
 
-katakana_to_hiragana_table = {
+# カタカナからひらがなへの変換テーブル
+KATAKANA_TO_HIRAGANA_TABLE = {
     "ア": "あ", "イ": "い", "ウ": "う", "エ": "え", "オ": "お",
     "カ": "か", "キ": "き", "ク": "く", "ケ": "け", "コ": "こ",
     "サ": "さ", "シ": "し", "ス": "す", "セ": "せ", "ソ": "そ",
@@ -26,202 +26,171 @@ katakana_to_hiragana_table = {
     "ャ": "ゃ", "ュ": "ゅ", "ョ": "ょ", "ッ": "っ",
 }
 
+LIMITHIRAGANA = 15
 
-def main():
-    st.title("「○○の△△の部分」の○○を入力すると△△を出力します")
-    st.markdown("""
-        <a href="https://github.com/toufu-24/Substring-Word-Finder" target="_blank">
-            GitHubリポジトリ
-        </a>
-    """, unsafe_allow_html=True)
-    st.markdown(
-        """
-    <div style='text-align: right; margin-top: 50px;'>
-        <span style='margin:15px;'><a href="https://developer.yahoo.co.jp/sitemap/">Webサービス by Yahoo! JAPAN</a></span><br>
-        <a href="https://www.mediawiki.org/wiki/API:Main_page/ja">Powered by MediaWiki</a>
-    </div>
-    """,
-        unsafe_allow_html=True,
-    )
-    message = ""
-    input_text = st.text_input("テキストを入力してください")
 
-    LIMITHIRAGANA = 15
-    if input_text == "":
-        message = "テキストを入力してから送信してください"
-        return st.write(message)
-    elif len(input_text) >= LIMITHIRAGANA:
-        message = str(LIMITHIRAGANA) + "文字以下にしてください"
-        return st.write(message)
-    YahooAPIkey = os.getenv("YahooAPIkey")
-    # 形態素のsetを作成
-    morpheme_set = set()
+def katakana_to_hiragana(katakana_text: str) -> str:
+    """カタカナ文字列をひらがな文字列に変換する"""
+    return "".join(KATAKANA_TO_HIRAGANA_TABLE.get(char, char) for char in katakana_text)
 
-    def parse_post(query):
-        morphemeAPIep = "https://jlp.yahooapis.jp/MAService/V2/parse"
-        headers = {
-            "Content-Type": "application/json",
-            "User-Agent": "Yahoo AppID: {}".format(YahooAPIkey),
-        }
-        param_dic = {
-            "id": "toufu",
-            "jsonrpc": "2.0",
-            "method": "jlp.maservice.parse",
-            "params": {"q": query},
-        }
-        params = json.dumps(param_dic).encode()
-        requ = req.Request(morphemeAPIep, params, headers)
-        with req.urlopen(requ) as res:
-            body = res.read()
-        return body.decode()
 
-    morpheme_res = parse_post(input_text)
-    # 形態素の配列
-    morpheme_res = json.loads(morpheme_res)["result"]["tokens"]
-    morpheme_list = [morpheme[0] for morpheme in morpheme_res]
-    for i in range(len(morpheme_list)):
-        morpheme_set.add(morpheme_list[i])
+def parse_text_to_morphemes(query: str, api_key: str) -> set[str]:
+    """Yahoo APIで形態素解析を実行"""
+    url = "https://jlp.yahooapis.jp/MAService/V2/parse"
+    headers = {
+        "Content-Type": "application/json",
+        "User-Agent": f"Yahoo AppID: {api_key}",
+    }
+    params = {
+        "id": "toufu",
+        "jsonrpc": "2.0",
+        "method": "jlp.maservice.parse",
+        "params": {"q": query},
+    }
+    response = requests.post(url, headers=headers, json=params)
+    response.raise_for_status()
+    return {token[0] for token in response.json()["result"]["tokens"]}
 
-    # ひらがな変換API
-    def post(query):
-        hiraganaAPIep = "https://jlp.yahooapis.jp/FuriganaService/V2/furigana"
-        headers = {
-            "Content-Type": "application/json",
-            "User-Agent": "Yahoo AppID: {}".format(YahooAPIkey),
-        }
-        param_dic = {
-            "id": "toufu",
-            "jsonrpc": "2.0",
-            "method": "jlp.furiganaservice.furigana",
-            "params": {"q": query, "grade": 1},
-        }
-        params = json.dumps(param_dic).encode()
-        requ = req.Request(hiraganaAPIep, params, headers)
-        with req.urlopen(requ) as res:
-            body = res.read()
-        return body.decode()
 
-    response = post(input_text)
-    parsed_data = json.loads(response)
-    word = parsed_data["result"]["word"]
-    hiragana_text = ""
-    for w in word:
-        if "furigana" in w:
-            hiragana_text += w["furigana"]
-        else:
-            hiragana_text += w["surface"]
+def convert_text_to_hiragana(query: str, api_key: str) -> str:
+    """Yahoo APIでひらがな変換を実行"""
+    url = "https://jlp.yahooapis.jp/FuriganaService/V2/furigana"
+    headers = {
+        "Content-Type": "application/json",
+        "User-Agent": f"Yahoo AppID: {api_key}",
+    }
+    params = {
+        "id": "toufu",
+        "jsonrpc": "2.0",
+        "method": "jlp.furiganaservice.furigana",
+        "params": {"q": query, "grade": 1},
+    }
+    response = requests.post(url, headers=headers, json=params)
+    response.raise_for_status()
 
-    def katakana_to_hiragana(katakana_text):
-        hiragana_text = ""
-        for char in katakana_text:
-            if char in katakana_to_hiragana_table:
-                hiragana_text += katakana_to_hiragana_table[char]
-            else:
-                hiragana_text += char
-        return hiragana_text
+    word_list = response.json()["result"]["word"]
+    return "".join(word.get("furigana", word["surface"]) for word in word_list)
 
-    hiragana_text = katakana_to_hiragana(hiragana_text)
 
-    if len(hiragana_text) >= LIMITHIRAGANA:
-        message = "ひらがなで" + str(LIMITHIRAGANA) + "文字以下にしてください"
-        return st.write(message)
-    elif len(hiragana_text) <= 2:
-        message = "ひらがなで3文字以上にしてください"
-        return st.write(message)
+def get_substrings(text: str) -> list[str]:
+    """文字列の連続部分文字列を取得"""
+    substrings = {
+        text[i:j] for i in range(len(text)) for j in range(i + 2, len(text) + 1)
+    }
+    return sorted(substrings, key=len, reverse=True)
 
-    # 連続部分文字列を1文字のもの以外全て抽出
-    subStrings = []
-    for i in range(len(hiragana_text)):
-        for j in range(i + 2, len(hiragana_text) + 1):
-            subStrings.append(hiragana_text[i:j])
-    subStrings = list(set(subStrings))
-    subStrings.sort(key=len, reverse=True)
-    subStrings.pop(0)
 
-    # 日本語変換API
-    def conversion_post(query):
-        APPID = YahooAPIkey
-        URL = "https://jlp.yahooapis.jp/JIMService/V2/conversion"
-        headers = {
-            "Content-Type": "application/json",
-            "User-Agent": "Yahoo AppID: {}".format(APPID),
-        }
-        param_dic = {
+def transliterate_substrings(substrings: list[str], api_key: str) -> set[str]:
+    """Yahoo APIで連続部分文字列を日本語変換"""
+    url = "https://jlp.yahooapis.jp/JIMService/V2/conversion"
+    headers = {
+        "Content-Type": "application/json",
+        "User-Agent": f"Yahoo AppID: {api_key}",
+    }
+    transliterated: set = set()
+
+    for i in range(0, len(substrings), 10):
+        batch = " ".join(substrings[i : i + 10])
+        params = {
             "id": "toufu",
             "jsonrpc": "2.0",
             "method": "jlp.jimservice.conversion",
-            "params": {"q": query, "results": 1},
+            "params": {"q": batch, "results": 1},
         }
-        params = json.dumps(param_dic).encode()
-        requ = req.Request(URL, params, headers)
-        with req.urlopen(requ) as res:
-            body = res.read()
-        return body.decode()
+        response = requests.post(url, headers=headers, json=params)
+        response.raise_for_status()
+        transliterated.update(
+            candidate
+            for segment in response.json()["result"]["segment"]
+            for candidate in segment["candidate"]
+        )
 
-    length_watcher = True
-    transliterated_subStrings = []
-    i = 0
-    while length_watcher:
-        string = ""
-        for j in range(i, len(subStrings)):
-            if len(string + subStrings[j]) >= 70:
-                j -= 1
-                break
-            string += subStrings[j] + " "
-        if j == len(subStrings) - 1:
-            length_watcher = False
-        i = j + 1
-        post_res = conversion_post(string)
-        parsed_data = json.loads(post_res)
-        segment = parsed_data["result"]["segment"]
-        for s in segment:
-            transliterated_subStrings.extend(s["candidate"])
-    # 重複を削除
-    transliterated_subStrings = list(set(transliterated_subStrings))
-    transliterated_subStrings.sort(key=len, reverse=True)
+    return transliterated
 
-    # Wikipediaに存在する語であるかの判定
-    exist_wikipedia = []
-    wikipedia_input_str = ""
-    for i in range(len(transliterated_subStrings) - 1):
-        wikipedia_input_str += transliterated_subStrings[i] + "|"
-    wikipedia_input_str += transliterated_subStrings[len(transliterated_subStrings) - 1]
 
+def filter_existing_words(words: list[str]) -> list[str]:
+    """Wikipedia APIを利用して存在する単語のみを抽出"""
+    url = "https://ja.wikipedia.org/w/api.php"
     headers = {
         "Accept-Encoding": "gzip",
         "User-Agent": "word-finder(https://substring-word-finder.onrender.com/)",
     }
-    base_url = "https://ja.wikipedia.org/w/api.php"
     params = {
         "action": "query",
         "format": "json",
         "prop": "info",
-        "titles": wikipedia_input_str,
+        "titles": "|".join(words),
     }
-    WikiResponse = requests.get(base_url, headers=headers, params=params)
-    data = WikiResponse.json()
-    pages = data["query"]["pages"]
-    for page in pages.values():
-        if page.get("missing") is None:
-            exist_wikipedia.append(page["title"])
+    response = requests.get(url, headers=headers, params=params)
+    response.raise_for_status()
+    pages = response.json()["query"]["pages"]
+    return [page["title"] for page in pages.values() if page.get("missing") is None]
 
-    # 重複を削除
-    result = list(set(exist_wikipedia))
+
+def main():
+    # .envファイルを読み込む
+    load_dotenv()
+
+    st.title("「○○の△△の部分」の○○を入力すると△△を出力します")
+    st.markdown(
+        '<a href="https://github.com/toufu-24/Substring-Word-Finder" target="_blank">GitHubリポジトリ</a>',
+        unsafe_allow_html=True,
+    )
+
+    input_text = st.text_input("テキストを入力してください")
+    if not input_text:
+        st.write("テキストを入力してから送信してください")
+        return
+
+    if len(input_text) > LIMITHIRAGANA:
+        st.write(f"{LIMITHIRAGANA}文字以下にしてください")
+        return
+
+    api_key = os.getenv("YahooAPIkey")
+    if not api_key:
+        st.write("Yahoo APIキーが設定されていません")
+        return
+
+    # 形態素解析
+    morphemes: set[str] = parse_text_to_morphemes(input_text, api_key)
+
+    # ひらがな変換
+    hiragana_text: str = katakana_to_hiragana(
+        convert_text_to_hiragana(input_text, api_key)
+    )
+
+    # ひらがな文字列の長さ制限
+    if len(hiragana_text) > LIMITHIRAGANA:
+        st.write(f"ひらがなで{LIMITHIRAGANA}文字以下にしてください")
+        return
+    if len(hiragana_text) < 3:
+        st.write("ひらがなで3文字以上にしてください")
+        return
+
+    # 部分文字列取得
+    substrings: list[str] = get_substrings(hiragana_text)
+
+    # 日本語変換
+    transliterated: set[str] = transliterate_substrings(substrings, api_key)
+
+    # Wikipediaで存在する単語をフィルタリング
+    existing_words: list[str] = filter_existing_words(transliterated)
+
+    # 形態素解析での単語を除外
+    result: list[str] = [word for word in existing_words if word not in morphemes]
+
+    # 結果のソート
     result.sort(key=len, reverse=True)
-    # 形態素解析で抽出した語を削除
-    for i in range(len(result)):
-        if result[i] in morpheme_set:
-            result[i] = ""
-    result = [x for x in result if x != ""]
 
+    # 結果の表示
     st.write(result)
     if st.button("詳細を表示"):
         st.write("入力テキスト:", input_text)
         st.write("ひらがなテキスト:", hiragana_text)
         st.write("形態素リスト:")
-        st.write(morpheme_list)
+        st.write(morphemes)
         st.write("result候補:")
-        st.write(transliterated_subStrings)
+        st.write(transliterated)
 
 
 if __name__ == "__main__":
