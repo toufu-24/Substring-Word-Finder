@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, shrink-to-fit=no"
+    />
+    <title>stlite app</title>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@stlite/mountable@0.58.4/build/stlite.css"
+    />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script src="https://cdn.jsdelivr.net/npm/@stlite/mountable@0.58.4/build/stlite.js"></script>
+    <script>
+      stlite.mount(
+        {
+          requirements: ["requests"],
+          entrypoint: "main.py",
+          files: {
+            "main.py": {
+              url: "https://raw.githubusercontent.com/toufu-24/Substring-Word-Finder/refs/heads/static/src/substring_word_finder/main.py",
+            },
+          },
+        },
+        document.getElementById("root")
+      );
+    </script>
+  </body>
+</html>
