@@ -1,7 +1,6 @@
 import streamlit as st
 import requests
 import os
-from dotenv import load_dotenv
 
 # カタカナからひらがなへの変換テーブル
 KATAKANA_TO_HIRAGANA_TABLE = {
@@ -128,9 +127,6 @@ def filter_existing_words(words: list[str]) -> list[str]:
 
 
 def main():
-    # .envファイルを読み込む
-    load_dotenv()
-
     st.title("「○○の△△の部分」の○○を入力すると△△を出力します")
     st.markdown(
         '<a href="https://github.com/toufu-24/Substring-Word-Finder" target="_blank">GitHubリポジトリ</a>',
