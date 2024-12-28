@@ -12,7 +12,7 @@ dependencies = [
     "types-requests>=2.32.0.20241016",
 ]
 readme = "README.md"
-requires-python = ">= 3.7"
+requires-python = ">= 3.12.4"
 
 [build-system]
 requires = ["hatchling"]
@@ -27,6 +27,3 @@ allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/substring_word_finder"]
-
-[tool.rye.scripts]
-hoge = "streamlit run src/substring_word_finder/main.py"
