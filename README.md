@@ -16,6 +16,7 @@ streamlit run src/substring_word_finder/main.py
 ```
 
 # 実装方法
+[記事](https://qiita.com/toufu24/items/e521341f182ee6a4c792)にある程度書きました
 streamlitを用いて実装しています．  
 入力された文字列をひらがなに変換し，それを連続部分文字列に分割します．それに対してそれぞれ日本語の変換をおこない，Wikipediaのページが存在するならば単語として成立しているとみなします．
 
