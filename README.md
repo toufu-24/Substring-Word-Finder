@@ -5,6 +5,16 @@ https://substring-word-finder.onrender.com
 # 概要
 連続部分文字列をとり，それが単語として存在するかどうかを判定します．
 
+# 実行方法
+.envファイルを作成し，以下のように記述してください．
+```
+YahooAPIkey=<あなたのYahooAPIkey>
+```
+その後，以下のコマンドを実行してください．
+```
+streamlit run src/substring_word_finder/main.py
+```
+
 # 実装方法
 streamlitを用いて実装しています．  
 入力された文字列をひらがなに変換し，それを連続部分文字列に分割します．それに対してそれぞれ日本語の変換をおこない，Wikipediaのページが存在するならば単語として成立しているとみなします．

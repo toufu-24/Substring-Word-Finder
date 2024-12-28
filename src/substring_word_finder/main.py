@@ -73,7 +73,7 @@ def convert_text_to_hiragana(query: str, api_key: str) -> str:
 
 
 def get_substrings(text: str) -> list[str]:
-    """文字列の連続部分文字列を取得"""
+    """文字列の部分文字列を取得"""
     substrings = {
         text[i:j] for i in range(len(text)) for j in range(i + 2, len(text) + 1)
     }
@@ -81,7 +81,7 @@ def get_substrings(text: str) -> list[str]:
 
 
 def transliterate_substrings(substrings: list[str], api_key: str) -> set[str]:
-    """Yahoo APIで連続部分文字列を日本語変換"""
+    """Yahoo APIで部分文字列を日本語変換"""
     url = "https://jlp.yahooapis.jp/JIMService/V2/conversion"
     headers = {
         "Content-Type": "application/json",
@@ -109,7 +109,7 @@ def transliterate_substrings(substrings: list[str], api_key: str) -> set[str]:
 
 
 def filter_existing_words(words: list[str]) -> list[str]:
-    """Wikipedia APIを利用して存在する単語のみを抽出"""
+    """MediaWiki APIを利用して存在する単語のみを抽出"""
     url = "https://ja.wikipedia.org/w/api.php"
     headers = {
         "Accept-Encoding": "gzip",
