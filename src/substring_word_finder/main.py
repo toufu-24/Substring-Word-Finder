@@ -131,7 +131,8 @@ def main():
     # .envファイルを読み込む
     load_dotenv()
 
-    st.title("「○○の△△の部分」の○○を入力すると△△を出力します")
+    st.title("部分ツイート生成器")
+    st.write("「○○の△△の部分」の○○を入力すると△△を出力します")
     st.markdown(
         '<a href="https://github.com/toufu-24/Substring-Word-Finder" target="_blank">GitHubリポジトリ</a>',
         unsafe_allow_html=True,
