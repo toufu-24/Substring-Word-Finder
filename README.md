@@ -1,6 +1,7 @@
 # 連続部分文字列の単語判定
 このURLで使用することが出来ます.  
-https://substring-word-finder.onrender.com
+https://substring-word-finder.toufu24.dev
+
 
 # 概要
 連続部分文字列をとり，それが単語として存在するかどうかを判定します．
